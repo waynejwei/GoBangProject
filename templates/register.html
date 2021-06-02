@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <title>login test</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript">
+        function check() {
+            var username = document.getElementById("username");
+            if(username.value == "" || username.value.trim() == ""){
+                var name_null = document.getElementById("name_null");
+                name_null.style.display = "";
+                return false;
+            }
+            var pass1 = document.getElementById("password");
+            if(pass1.value == "" || pass1.value.trim() == ""){
+                var pass1_null = document.getElementById("pass1_null");
+                pass1_null.style.display = "";
+                return false;
+            }
+            var pass2 = document.getElementById("password2");
+            if(pass2.value == "" || pass2.value.trim() == ""){
+                var pass2_null = document.getElementById("pass2_null");
+                pass2_null.style.display = "";
+                return false;
+            }
+            if (pass1.value == pass2.value)
+                return true;
+            else {
+                var err = document.getElementById("error_msg");
+                err.style.display = "";
+                return false;
+            }
+        }
+        function register() {
+            if(!this.check()){
+                return false;
+            }
+            $.ajax({
+                type: "POST",//方法
+                url: "/register2" ,//表单接收url
+                data: $('#form').serialize(),
+                success: function (data) {
+                    console.log(data)
+                  //提交成功的提示词或者其他反馈代码
+                    if(data == 'false'){
+                        alert('该用户名已被注册！')
+                    }
+                    else if(data == 'true'){
+                        window.location.href="login";
+                    }
+                    else{
+                        window.location.href="register";
+                    }
+                }
+            });
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            background: url(../static/img/gobang_pic.jpeg) no-repeat 0px 0px;
+            background-size: 100% 100%;
+            -moz-background-size: 100% 100%;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        #registerDiv {
+            width: 37%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            background-color: rgba(75, 81, 95, 0.3);
+            box-shadow: 7px 7px 17px rgba(52, 56, 66, 0.5);
+            border-radius: 5px;
+        }
+
+        p {
+            margin-top: 30px;
+            margin-left: 20px;
+            color: azure;
+        }
+
+        input {
+            margin-left: 15px;
+            border-radius: 5px;
+            border-style: hidden;
+            height: 30px;
+            width: 140px;
+            background-color: rgba(216, 191, 216, 0.5);
+            outline: none;
+            color: #f0edf3;
+            padding-left: 10px;
+        }
+
+        .button {
+            border-color: cornsilk;
+            background-color: rgba(100, 149, 237, .7);
+            color: aliceblue;
+            border-style: hidden;
+            border-radius: 5px;
+            width: 100px;
+            height: 31px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="registerDiv">
+        <form action="##" id="form" method="post" onsubmit="return check()">
+            <h1 style="text-align: center;color: aliceblue;">注册</h1>
+            <p>Username:<input name="username" id="username" type="text" placeholder="username" required id="username_require"><label id="name_trip"></label>
+            <span id="name_null" style="color:red;display:none;">姓名不能为空</span></p>
+
+            <p>Password:  <input name="password" id="password" type="password" placeholder="password" required id="pass1_require"><label id="password_trip"></label>
+            <span id="pass1_null" style="color:red;display:none;">密码不能为空</span></p>
+
+            <p>RePassword:  <input name="password2" id="password2" type="password" placeholder="Repassword" required id="pass2_require"><label id="password_trip"></label>
+            <span id="pass2_null" style="color:red;display:none;">重复密码不能为空</span>
+                <span id="error_msg" style="color:red;display:none;">密码不一致</span></p>
+
+            <div style="text-align: center;margin-top: 30px;">
+                <input id="register_btn" type="button" class="button" value="注册" onclick="register()">
+                <input type="reset" class="button" value="重置">
+            </div>
+        </form>
+    </div>
+    <script>
+        var username = document.getElementById('username');
+        var pass2 = document.getElementById('password2');
+        var pass1 = document.getElementById('password');
+        username.onchange = function () {
+            var name_null = document.getElementById("name_null");
+            if(username.value == "" || username.value.trim() == ""){
+                name_null.style.display = "";
+            }
+            else{
+                name_null.style.display = "none";
+            }
+        }
+        pass1.onchange = function () {
+            var pass1_null = document.getElementById("pass1_null");
+            if(pass1.value == "" || pass1.value.trim() == ""){
+                pass1_null.style.display = "";
+            }
+            else{
+                pass1_null.style.display = "none";
+            }
+        }
+        pass2.onchange = function () {
+            var pass2_null = document.getElementById("pass2_null");
+            if(pass2.value == "" || pass2.value.trim() == ""){
+                pass2_null.style.display = "";
+            }
+            else {
+                pass2_null.style.display = "none";
+                if (pass1.value == pass2.value) {
+                    var err = document.getElementById("error_msg");
+                    err.style.display = "none";
+                }
+            }
+        }
+    </script>
+</body>
+</html>

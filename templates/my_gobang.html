@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>五子棋</title>
+    <style>
+        .main_box {
+            display: flex;
+            flex-direction: column;
+        }
+        canvas {
+				display: block;
+				margin: 50px auto;
+				box-shadow: -2px -2px 2px #EFEFEF, 5px 5px 5px #B9B9B9;
+				cursor: pointer;
+			}
+        #result-wrap {
+				text-align: center;
+			}
+        #btn-wrap {
+            margin:10px 10px;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+        div>span {
+            display: inline-block;
+            padding: 10px 20px;
+            color: #FFFFFF;
+            background-color: darksalmon;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+        #now_chess {
+            background-color: #86989B;
+            cursor: default;
+        }
+        .unable {
+            background: #D6D6D4;
+            color: #ADACAA;
+        }
+        .able {
+            color: #FFFFFF;
+            background-color: darksalmon;
+        }
+    </style>
+</head>
+<body>
+    <div class="main_box">
+        <h3 id="result-wrap">--益智五子棋--</h3>
+        <canvas id="chess" width="450px" height="450px"></canvas>
+        <div id="btn-wrap">
+            <span id="restart">重新开始</span>
+            <span id="goback" class="unable">悔棋</span>
+            <span id="return" class="unable">撤销悔棋</span>
+            <span id="audio">语音落子</span>
+            <span id="now_chess">当前下棋：黑棋</span>
+        </div>
+    </div>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.js"></script>
+    <script type="text/javascript">
+        var isBlack = true;   //当前是否为黑棋
+        var over = false;     //是否结束
+        var chessBord = []; //棋盘
+        for (var i = 0; i < 15; i++) {
+            chessBord[i] = [];
+            for (var j = 0; j < 15; j++) {
+                chessBord[i][j] = 0;
+            }
+        }
+        var resultTxt = document.getElementById("result-wrap");  //结果文字
+        var nowChess = document.getElementById('now_chess');  //当前落棋方
+        var backAble = false, returnAble = false;    //是否能悔棋，是否能撤销悔棋
+        var backbtn = document.getElementById("goback");    //撤销
+        var returnbtn = document.getElementById("return");      //取消撤销
+        var audioBtn = document.getElementById("audio")     //录音按钮
+        //设置画布
+        var chess = document.getElementById("chess");
+        var context = chess.getContext('2d');
+        context.strokeStyle = '#bfbfbf';	//边框颜色
+        window.onload = function() {
+            drawChessBoard(); // 画棋盘
+        }
+        document.getElementById("restart").onclick = function(){
+            window.location.reload();
+            //通知后端刷新chessData，调用reset接口
+            $.ajax({
+                 type: 'POST',
+                 url: '/reset',
+                 data: {}
+            });
+        }
+
+        chess.onclick = function(e){
+            if(over)  return;
+            // 设置悔棋功能可用
+            backAble = true;
+            backbtn.className = "able";
+            //设置撤销悔棋不可用
+            returnAble = false;
+            returnbtn.className = "unable";
+            var x = e.offsetX;
+            var y = e.offsetY;
+            var i = Math.floor(x / 30);
+            var j = Math.floor(y / 30);
+            _nowi = i;   //临时记录位置，方便之后悔棋
+            _nowj = j;
+            playChess(i, j);
+        }
+
+        backbtn.onclick = function () {
+            if(!backAble){
+                return;
+            }
+            over = false;
+            isBlack = !isBlack;   //换回棋子的模式
+            if(isBlack){
+                nowChess.innerText = '当前下棋：黑棋';
+            }else{
+                nowChess.innerText = '当前下棋：白棋';
+            }
+            //若本来获胜，然后撤销，则需要将文字改为原来的文字
+            resultTxt.innerHTML = '--益智五子棋--';
+            //恢复棋盘
+            chessBord[_nowi][_nowj] = 0;
+            minusStep(_nowi, _nowj); //销毁棋子
+            backAble = false;  //悔棋以后不能再悔棋
+            backbtn.className = "unable";
+            //通知后端
+            $.ajax({
+                 type: 'POST',
+                 url: '/backChess',
+                 data: {"chess_type":isBlack,"x":_nowi,"y":_nowj}
+            });
+            returnAble = true;
+            returnbtn.className = "able";
+        }
+
+        //撤销悔棋
+        returnbtn.onclick = function(){
+            if(!returnAble){
+                return;
+            }
+            playChess(_nowi, _nowj);
+            returnAble = false;
+            returnbtn.className = "unable";
+        }
+
+        //录音
+        audioBtn.onclick = function () {
+            if(over)  return;
+            //通过录音获取落子位置
+            $.ajax({
+                type: 'POST',
+                url: '/audio',
+                data: {},
+                success: function (data) {
+                    console.log(data)
+                    if(data.msg == false){
+                        alert("没听清哦！请再试一次！")
+                    }
+                    else{
+                        // 设置悔棋功能可用
+                        backAble = true;
+                        backbtn.className = "able";
+                        //设置撤销悔棋不可用
+                        returnAble = false;
+                        returnbtn.className = "unable";
+                        _nowi = data.y;   //临时记录位置，方便之后悔棋
+                        _nowj = data.x;
+                        playChess(data.y, data.x)
+                    }
+                }
+
+            })
+        }
+
+        //下棋逻辑
+        var playChess = function (i, j) {
+            if(chessBord[i][j] == 0){
+                if(isBlack){
+
+                    oneStep(i, j, isBlack);
+                    chessBord[i][j] = 1; //黑棋占有位置
+                }
+                else{
+                    oneStep(i, j, isBlack);
+                    chessBord[i][j] = 2;   //白棋占有位置
+                }
+                //将下棋的数据传到后端
+                $.ajax({
+                     type: 'POST',
+                     url: '/gobang',
+                     data: {"chess_type":isBlack,"x":i,"y":j},
+                     success: function (data) {  // 这个data是接收到的响应的实体
+                         console.log('最终结果是：' + data)
+                        if (data == 1){
+                            resultTxt.innerHTML = '黑棋获胜！';
+                            nowChess.innerText = '游戏结束'
+                            over = true;
+                        }
+                        else if(data == 2){
+                            resultTxt.innerHTML = '白棋获胜！';
+                            nowChess.innerText = '游戏结束'
+                            over = true;
+                        }
+                     }
+                });
+                isBlack = !isBlack;
+                if(isBlack){
+                    nowChess.innerText = '当前下棋：黑棋';
+                }else{
+                    nowChess.innerText = '当前下棋：白棋';
+                }
+            }
+        }
+
+
+        //绘画棋盘
+        var drawChessBoard = function(){
+            for (var i = 0; i < 15; i++) {
+                //横线
+                context.fillText((i + 1).toString(), 13 + i * 30, 13);
+                context.moveTo(15 + i * 30 , 15);
+                context.lineTo(15 + i * 30 , 435);
+                context.stroke();
+                //纵线
+                context.fillText(String.fromCharCode('A'.charCodeAt() + i), 5, 13 + i * 30);
+                context.moveTo(15 , 15 + i * 30);
+                context.lineTo(435 , 15 + i * 30);
+                context.stroke();
+            }
+        }
+
+        //画棋子
+        var oneStep = function(i, j, isBlack) {
+            context.beginPath();
+            context.arc(15 +i * 30, 15 + j * 30, 13, 0, 2 * Math.PI);// 画圆
+            context.closePath();
+            //渐变
+            var gradient = context.createRadialGradient(15 + i * 30
+            + 2, 15 + j * 30 - 2, 13, 15 + i * 30 + 2, 15 + j * 30 -
+            2, 0);
+            if(isBlack){
+                gradient.addColorStop(0,'#0a0a0a');
+                gradient.addColorStop(1,'#636766');
+            }else{
+                gradient.addColorStop(0,'#d1d1d1');
+                gradient.addColorStop(1,'#f9f9f9');
+            }
+            context.fillStyle = gradient;
+            context.fill();
+        }
+
+        //销毁棋子
+        var minusStep = function(i,j){
+             //擦除该圆
+            context.clearRect((i) * 30, (j) * 30, 30, 30);
+            // 重画该圆周围的格子
+            context.beginPath();
+            context.moveTo(15+i*30, j*30);
+            context.lineTo(15+i*30, j*30 + 30);
+            context.moveTo(i*30, j*30+15);
+            context.lineTo((i+1)*30, j*30+15);
+
+            context.stroke();
+        }
+    </script>
+</body>
+</html>

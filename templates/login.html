@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>login</title>
+    <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript">
+        function login() {
+            $.ajax({
+                type: "POST",//方法
+                url: "/login" ,//表单接收url
+                data: $('#form').serialize(),
+                success: function (data) {
+                    console.log(data)
+                  //提交成功的提示词或者其他反馈代码
+                    if(data == 'false'){
+                        alert('用户名或密码错误！')
+                    }
+                    else if(data == 'true'){
+                        window.location.href="my_gobang";
+                    }
+                }
+            });
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            background: url(../static/img/gobang_pic.jpeg) no-repeat 0px 0px;
+            background-size: 100% 100%;
+            -moz-background-size: 100% 100%;
+        }
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        #loginDiv {
+            width: 37%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            background-color: rgba(75, 81, 95, 0.3);
+            box-shadow: 7px 7px 17px rgba(52, 56, 66, 0.5);
+            border-radius: 5px;
+        }
+
+        p {
+            margin-top: 30px;
+            margin-left: 20px;
+            color: azure;
+        }
+
+        input {
+            margin-left: 15px;
+            border-radius: 5px;
+            border-style: hidden;
+            height: 30px;
+            width: 140px;
+            background-color: rgba(216, 191, 216, 0.5);
+            outline: none;
+            color: #f0edf3;
+            padding-left: 10px;
+        }
+
+        .button {
+            border-color: cornsilk;
+            background-color: rgba(100, 149, 237, .7);
+            color: aliceblue;
+            border-style: hidden;
+            border-radius: 5px;
+            width: 100px;
+            height: 31px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loginDiv">
+        <form action="##" id="form" method="post">
+            <h1 style="text-align: center;color: aliceblue;">登录</h1>
+            <p>Username:<input name="username" id="username" type="text" placeholder="username"><label id="username_trap"></label>
+            <span id="name_null" style="color:red;display:none;">姓名不能为空</span></p>
+
+            <p>Password:  <input name="password" id="password" type="password" placeholder="password"><label id="password_trap"></label>
+            <span id="pass1_null" style="color:red;display:none;">密码不能为空</span></p>
+
+            <div style="text-align: center;margin-top: 30px;">
+                <input type="button" class="button" value="注册" onclick="javascript:window.location.href='http://127.0.0.1:5000/register1'" />
+                <input type="button" class="button" value="登录" onclick="login()">
+                <input type="reset" class="button" value="重置">
+            </div>
+        </form>
+    </div>
+    <script>
+        var username = document.getElementById('username');
+        var pass1 = document.getElementById('password');
+        username.onchange = function () {
+            var name_null = document.getElementById("name_null");
+            if(username.value == "" || username.value.trim() == ""){
+                name_null.style.display = "";
+            }
+            else{
+                name_null.style.display = "none";
+            }
+        }
+        pass1.onchange = function () {
+            var pass1_null = document.getElementById("pass1_null");
+            if(pass1.value == "" || pass1.value.trim() == ""){
+                pass1_null.style.display = "";
+            }
+            else{
+                pass1_null.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
